@@ -1,0 +1,12 @@
+.interval {
+    text-align: center;
+}
+
+.note {
+    text-align: center;
+    font-weight: normal;
+}
+
+.rootNote {
+    font-weight: bold;
+}
