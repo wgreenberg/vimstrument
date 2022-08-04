@@ -140,6 +140,10 @@ const KEY_INTERVALS = {
     'j': 1, 'k': 2, 'l': 3, ';': 4,
 }
 
+Object.keys(KEY_INTERVALS).forEach(key => {
+    KEY_INTERVALS[key === ';' ? ':' : key.toUpperCase()] = KEY_INTERVALS[key] + Math.sign(KEY_INTERVALS[key]) * 4;
+})
+
 function createDegree(note) {
     let degree = document.createElement('div');
     degree.className = 'degree';
@@ -186,14 +190,25 @@ function escapeNote(note) {
     return note.replace(/#/g, 'sharp');
 }
 
-function updateScale(scale, degree) {
+function getClassForInterval(interval) {
+    interval = Math.abs(interval);
+    if (interval > 4) {
+        interval -= 4;
+    }
+    return interval;
+}
+
+function updateScale(scale, degree, shifted) {
     let keys = 'asdf jkl;';
+    if (shifted) {
+        keys = keys.toUpperCase().replace(';', ':');
+    }
     document.querySelectorAll('.interval, .key').forEach(cell => {
         cell.innerText = '';
-    })
+    });
     document.querySelectorAll('.degree').forEach(cell => {
         cell.classList.remove('zero', 'one', 'two', 'three', 'four');
-    })
+    });
     for (let i=0; i<keys.length; i++) {
         let key = keys[i];
         let interval = KEY_INTERVALS[key];
@@ -201,9 +216,9 @@ function updateScale(scale, degree) {
         let degreeDiv = document.querySelector(`#${newNote}`);
         degreeDiv.classList.add([
             'zero', 'one', 'two', 'three', 'four'
-        ][Math.abs(interval)])
+        ][getClassForInterval(interval)])
         let keyDiv = document.querySelector(`#${newNote} > .key`);
-        keyDiv.innerText = key;
+        keyDiv.innerText = key === ' ' ? '_' : key;
         let intervalDiv = document.querySelector(`#${newNote} > .interval`);
         intervalDiv.innerText = interval;
     }
@@ -232,15 +247,21 @@ window.addEventListener('load', async () => {
     });
     let pressedKeys = {};
     let sustainCheckbox = document.querySelector('#sustain > input');
-    window.addEventListener('keypress', event => {
+    window.addEventListener('keydown', event => {
+        if (event.key === 'Shift') {
+            updateScale(scale, player.scaleDegree, true);
+            return;
+        }
         if (!KEY_INTERVALS.hasOwnProperty(event.key) || event.repeat) {
             return;
         }
         pressedKeys[event.key] = player.jump(KEY_INTERVALS[event.key]);
-        updateScale(scale, player.scaleDegree);
+        updateScale(scale, player.scaleDegree, event.shiftKey);
     });
     window.addEventListener('keyup', event => {
-        if (pressedKeys.hasOwnProperty(event.key)) {
+        if (event.key === 'Shift') {
+            updateScale(scale, player.scaleDegree);
+        } else if (pressedKeys.hasOwnProperty(event.key)) {
             if (!sustainCheckbox.checked) {
                 pressedKeys[event.key].stop();
             }
