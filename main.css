@@ -49,6 +49,13 @@
     padding: 5px;
 }
 
+.scale {
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 5px;
+}
+
 .key {
 }
 

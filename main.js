@@ -22,9 +22,6 @@ class Scale {
     }
 
     note(degree) {
-        // return the note name for a degree
-        // scale.note(0) => "C1"
-        // scale.note(1) => "B2"
         degree = mod(degree, this.numNotes());
         let note = this.notes[degree % this.notes.length];
         let octave = Math.floor(degree / this.notes.length);
@@ -37,12 +34,12 @@ class Scale {
 }
 
 function parseNote(note) {
-    let parts = note.match(/^([A-G])(b*|#*)(\d+)$/);
+    let parts = note.match(/^([A-Ga-g])(b|#)?(\d)*$/);
     if (parts === null) {
         throw new Error(`Couldn't parse note "${note}"`);
     }
     return {
-        letter: parts[1],
+        letter: parts[1].toUpperCase(),
         accidental: parts[2],
         number: parts[3],
     };
@@ -65,7 +62,7 @@ function enharmonicFlat(note) {
             'A': 'Bb',
             'B': 'C',
         }[parsed.letter];
-        if (newLetter === 'C') {
+        if (newNote === 'C') {
             parsed.number += 1;
         }
         return `${newNote}${parsed.number}`;
@@ -82,14 +79,17 @@ function mod(x, m) {
 class Player {
     constructor(scale) {
         this.scale = scale;
+        // start about halfway through the scale (on the root note)
         this.scaleDegree = Math.floor(scale.numOctaves / 2) * scale.notes.length;
     }
 
     async load(ctx) {
         let notes = await loadNotes(ctx, 'mf', this.scale.allNotes());
         this.notes = {};
-        this.scale.allNotes().forEach((note, i) => {
-            this.notes[note] = notes[i];
+        notes.forEach(note => {
+            if (note !== undefined) {
+                this.notes[note.noteName] = note;
+            }
         })
     }
 
@@ -119,8 +119,14 @@ function createBufferSource(ctx, buffer) {
 
 async function loadNotes(ctx, volume, notes) {
     return await Promise.all(notes.map(async (note) => {
-        const buffer = await loadBuffer(ctx, `samples/${volume}/${enharmonicFlat(note)}.mp3`);
-        return createBufferSource(ctx, buffer);
+        try {
+            const buffer = await loadBuffer(ctx, `samples/${volume}/${enharmonicFlat(note)}.mp3`);
+            let src = createBufferSource(ctx, buffer);
+            src.noteName = note;
+            return src;
+        } catch (e) {
+            console.log(`Failed to load note: ${note}, ${e}`)
+        }
     }));
 }
 
@@ -137,7 +143,7 @@ const KEY_INTERVALS = {
 function createDegree(note) {
     let degree = document.createElement('div');
     degree.className = 'degree';
-    degree.id = note;
+    degree.id = escapeNote(note);
     let noteElement = createClassDiv('note');
     noteElement.innerText = note;
     degree.appendChild(noteElement);
@@ -154,6 +160,7 @@ function createClassDiv(className) {
 
 function createScale(scale) {
     let container = document.getElementById('ribbon');
+    container.innerHTML = '';
     scale.allNotes().forEach(note => {
         let degree = createDegree(note);
         if (parseNote(note).letter === scale.root()) {
@@ -161,6 +168,22 @@ function createScale(scale) {
         }
         container.appendChild(degree);
     });
+}
+
+async function parseScale(input, ctx) {
+    let letters = input.split(/\s+/);
+    letters = letters.map(letter => {
+        let parsed = parseNote(letter);
+        return `${parsed.letter}${parsed.accidental || ''}`;
+    });
+    let scale = new Scale(letters, 3, 5);
+    let player = new Player(scale);
+    await player.load(ctx);
+    return [scale, player];
+}
+
+function escapeNote(note) {
+    return note.replace(/#/g, 'sharp');
 }
 
 function updateScale(scale, degree) {
@@ -174,7 +197,7 @@ function updateScale(scale, degree) {
     for (let i=0; i<keys.length; i++) {
         let key = keys[i];
         let interval = KEY_INTERVALS[key];
-        let newNote = scale.note(degree + interval);
+        let newNote = escapeNote(scale.note(degree + interval));
         let degreeDiv = document.querySelector(`#${newNote}`);
         degreeDiv.classList.add([
             'zero', 'one', 'two', 'three', 'four'
@@ -188,12 +211,27 @@ function updateScale(scale, degree) {
 
 window.addEventListener('load', async () => {
     const ctx = new AudioContext();
-    let scale = new Scale(['C', 'D', 'E', 'F', 'G', 'A', 'B'], 3, 5);
-    let player = new Player(scale);
-    await player.load(ctx);
+    let scaleInput = document.querySelector('#scale-input');
+    let scaleError = document.querySelector('#error');
+    let scale, player;
+    try {
+        [scale, player] = await parseScale(scaleInput.value, ctx);
+        createScale(scale);
+        updateScale(scale, player.scaleDegree);
+    } catch (e) {
+        scaleError.innerText = `${e}`;
+    }
+    document.querySelector('#scale-button').addEventListener('mousedown', async () => {
+        try {
+            [scale, player] = await parseScale(scaleInput.value, ctx);
+            createScale(scale);
+            updateScale(scale, player.scaleDegree);
+        } catch (e) {
+            scaleError.innerText = `${e}`;
+        }
+    });
     let pressedKeys = {};
-    createScale(scale);
-    updateScale(scale, player.scaleDegree);
+    let sustainCheckbox = document.querySelector('#sustain > input');
     window.addEventListener('keypress', event => {
         if (!KEY_INTERVALS.hasOwnProperty(event.key) || event.repeat) {
             return;
@@ -203,8 +241,10 @@ window.addEventListener('load', async () => {
     });
     window.addEventListener('keyup', event => {
         if (pressedKeys.hasOwnProperty(event.key)) {
-            //pressedKeys[event.key].stop();
+            if (!sustainCheckbox.checked) {
+                pressedKeys[event.key].stop();
+            }
             delete pressedKeys[event.key];
         }
-    })
+    });
 });

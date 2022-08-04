@@ -2,9 +2,17 @@
     <head>
         <script src="./main.js"></script>
         <link rel="stylesheet" href="./main.css">
+        <title>Vimstrument</title>
     </head>
     <body>
         <div id="ribbon" class="ribbon"></div>
+        <div class="scale">
+            <span>Scale</span>
+            <input id="scale-input" value="C D E F G A B">
+            <input type="button" id="scale-button" value="Create">
+            <span id="error"></span>
+        </div>
+        <div id="sustain"><span>Sustain</span><input type="checkbox" checked="true"></div>
         <footer>
             <span class="attribution">Samples come from the <a href="http://theremin.music.uiowa.edu/MISpiano.html">University of Iowa's EMS repository</a>.
         </footer>
