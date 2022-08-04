@@ -23,13 +23,44 @@ class Scale {
 
     note(degree) {
         degree = mod(degree, this.numNotes());
-        let note = this.notes[degree % this.notes.length];
-        let octave = Math.floor(degree / this.notes.length);
-        if (octave >= this.numOctaves) {
-            octave = octave % this.numOctaves;
+        let noteLetter = this.notes[degree % this.notes.length];
+        let noteOctave = Math.floor(degree / this.notes.length);
+        if (noteOctave >= this.numOctaves) {
+            noteOctave = noteOctave % this.numOctaves;
         }
-        octave += this.startOctave;
-        return `${note}${octave}`;
+        noteOctave += this.startOctave;
+        let noteName = `${noteLetter}${noteOctave}`;
+        if (degree !== 0) {
+            if (compareNotes(this.note(degree-1), noteName) >= 0) {
+                return `${noteLetter}${noteOctave+1}`
+            }
+        }
+        return noteName;
+    }
+}
+
+function compareNotes(a, b) {
+    const noteRank = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+    let enhA = parseNote(enharmonicFlat(a));
+    let enhB = parseNote(enharmonicFlat(b));
+    if (enhA.number !== enhB.number) {
+        return enhA.number - enhB.number;
+    }
+    let rankDiff = noteRank.indexOf(enhA.letter) - noteRank.indexOf(enhB.letter);
+    if (rankDiff === 0) {
+        let accA = enhA.accidental;
+        let accB = enhB.accidental;
+        if (accA === accB) {
+            return 0;
+        } else {
+            if (accA === 'b' || accB === '#') {
+                return -1;
+            } else {
+                return 1;
+            }
+        }
+    } else {
+        return rankDiff;
     }
 }
 
@@ -50,7 +81,14 @@ function enharmonicFlat(note) {
         return note;
     }
     let parsed = parseNote(note);
-    if (parsed.accidental === '' || parsed.accidental === 'b') {
+    if (parsed.accidental === '') {
+        return note;
+    } else if (parsed.accidental === 'b') {
+        if (parsed.letter === 'C') {
+            return `B${parsed.number -= 1}`;
+        } else if (parsed.letter === 'F') {
+            return `E${parsed.number}`;
+        }
         return note;
     } else if (parsed.accidental === '#') {
         let newNote = {

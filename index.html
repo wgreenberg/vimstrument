@@ -1,37 +1,37 @@
 <html>
-    <head>
-        <script src="./main.js"></script>
-        <link rel="stylesheet" href="./main.css">
-        <title>Vimstrument</title>
-    </head>
-    <body>
-        <div class="content">
-            <span class="title">Vimstrument</span>
-            <p>The Vimstrument is a piano you play with intervals, rather than
-            by pressing notes directly. The instrument has a starting note,
-            which can be played with the space bar. To move the note upward,
-            press <code>j</code> to move one note up, <code>k</code> to move by
-            two, etc. Likewise, press
-            <code>f</code> to move one note downward, <code>d</code> for two,
-            etc. Press <code>Shift</code> to move by larger intervals, and use
-            the controls below to use different scales or to disable
-            sustain.</p>
-            <div id="ribbon" class="ribbon"></div>
-            <div class="controls">
-                <div class="scale">
-                    <span>Scale</span>
-                    <input id="scale-input" value="C D E F G A B">
-                    <input type="button" id="scale-button" value="Create">
-                    <span id="error"></span>
-                </div>
-                <div id="sustain">
-                    <span>Sustain</span>
-                    <input type="checkbox" checked="true">
-                </div>
-            </div>
+  <head>
+    <script src="./main.js"></script>
+    <link rel="stylesheet" href="./main.css">
+    <title>Vimstrument</title>
+  </head>
+  <body>
+    <div class="content">
+      <span class="title">Vimstrument</span>
+      <p>The Vimstrument is a piano you play with intervals, rather than
+      by pressing notes directly. The instrument has a starting note,
+      which can be played with the space bar. To move the note upward,
+      press <code>j</code> to move one note up, <code>k</code> to move by
+      two, etc. Likewise, press
+      <code>f</code> to move one note downward, <code>d</code> for two,
+      etc. Press <code>Shift</code> to move by larger intervals, and use
+      the controls below to use different scales or to disable
+      sustain.</p>
+      <div id="ribbon" class="ribbon"></div>
+      <div class="controls">
+        <div class="scale">
+          <span>Scale (use <code>#</code> for sharp, <code>b</code> for flat)</span>
+          <input id="scale-input" value="F G A Bb C D E">
+          <input type="button" id="scale-button" value="Create">
+          <span id="error"></span>
         </div>
-        <footer>
-            <span class="attribution">Samples come from the <a href="http://theremin.music.uiowa.edu/MISpiano.html">University of Iowa's EMS repository</a>.
-        </footer>
-    </body>
+        <div id="sustain">
+          <span>Sustain</span>
+          <input type="checkbox" checked="true">
+        </div>
+      </div>
+    </div>
+    <footer>
+      <span class="attribution">Samples come from the <a href="http://theremin.music.uiowa.edu/MISpiano.html">University of Iowa's EMS repository</a>.
+    </footer>
+  </body>
 </html>
