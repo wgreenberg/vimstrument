@@ -82,7 +82,7 @@ function mod(x, m) {
 class Player {
     constructor(scale) {
         this.scale = scale;
-        this.scale_degree = 0;
+        this.scaleDegree = Math.floor(scale.numOctaves / 2) * scale.notes.length;
     }
 
     async load(ctx) {
@@ -94,8 +94,8 @@ class Player {
     }
 
     jump(interval) {
-        this.scale_degree += interval;
-        let noteName = this.scale.note(this.scale_degree);
+        this.scaleDegree += interval;
+        let noteName = this.scale.note(this.scaleDegree);
         let note = this.notes[noteName];
         this.notes[noteName] = cloneNote(note);
         note.start();
@@ -106,12 +106,8 @@ class Player {
 async function loadBuffer(ctx, path) {
     const response = await fetch(path);
     const arrayBuffer = await response.arrayBuffer();
-    try {
-        const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
-        return audioBuffer;
-    } catch (e) {
-        console.log(e, path);
-    }
+    const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+    return audioBuffer;
 }
 
 function createBufferSource(ctx, buffer) {
@@ -138,48 +134,55 @@ const KEY_INTERVALS = {
     'j': 1, 'k': 2, 'l': 3, ';': 4,
 }
 
-function createNoteTable(scale) {
-    let table = document.getElementById('scale');
-    let notesRow = document.createElement('tr');
-    let intervalRow = document.createElement('tr');
-    let intervalNumRow = document.createElement('tr');
-    table.appendChild(notesRow)
-    table.appendChild(intervalRow);
-    table.appendChild(intervalNumRow);
+function createDegree(note) {
+    let degree = document.createElement('div');
+    degree.className = 'degree';
+    degree.id = note;
+    let noteElement = createClassDiv('note');
+    noteElement.innerText = note;
+    degree.appendChild(noteElement);
+    degree.appendChild(createClassDiv('key'));
+    degree.appendChild(createClassDiv('interval'));
+    return degree;
+}
+
+function createClassDiv(className) {
+    let div = document.createElement('div');
+    div.className = className;
+    return div;
+}
+
+function createScale(scale) {
+    let container = document.getElementById('ribbon');
     scale.allNotes().forEach(note => {
-        let noteHeader = document.createElement('th');
-        noteHeader.innerText = note;
-        noteHeader.id = `${note}-note`;
-        noteHeader.className = 'note';
+        let degree = createDegree(note);
         if (parseNote(note).letter === scale.root()) {
-            noteHeader.className += ' rootNote';
+            degree.className += ' root';
         }
-        notesRow.appendChild(noteHeader);
-        let intervalCell = document.createElement('td');
-        intervalCell.id = `${note}-interval`;
-        intervalCell.className = 'interval';
-        intervalRow.appendChild(intervalCell);
-        let intervalNumCell = document.createElement('td');
-        intervalNumCell.id = `${note}-intervalNum`;
-        intervalNumCell.className = 'interval';
-        intervalNumRow.appendChild(intervalNumCell);
+        container.appendChild(degree);
     });
 }
 
-function updateNoteTable(scale, degree) {
+function updateScale(scale, degree) {
     let keys = 'asdf jkl;';
-    let intervalCells = document.getElementsByClassName('interval');
-    for (let i=0; i<intervalCells.length; i++){
-        intervalCells[i].innerText = '';
-    }
+    document.querySelectorAll('.interval, .key').forEach(cell => {
+        cell.innerText = '';
+    })
+    document.querySelectorAll('.degree').forEach(cell => {
+        cell.classList.remove('zero', 'one', 'two', 'three', 'four');
+    })
     for (let i=0; i<keys.length; i++) {
         let key = keys[i];
         let interval = KEY_INTERVALS[key];
         let newNote = scale.note(degree + interval);
-        let intervalCell = document.getElementById(`${newNote}-interval`);
-        intervalCell.innerText = key === ' ' ? 'space' : key;
-        let intervalNumCell = document.getElementById(`${newNote}-intervalNum`);
-        intervalNumCell.innerText = interval;
+        let degreeDiv = document.querySelector(`#${newNote}`);
+        degreeDiv.classList.add([
+            'zero', 'one', 'two', 'three', 'four'
+        ][Math.abs(interval)])
+        let keyDiv = document.querySelector(`#${newNote} > .key`);
+        keyDiv.innerText = key;
+        let intervalDiv = document.querySelector(`#${newNote} > .interval`);
+        intervalDiv.innerText = interval;
     }
 }
 
@@ -189,13 +192,14 @@ window.addEventListener('load', async () => {
     let player = new Player(scale);
     await player.load(ctx);
     let pressedKeys = {};
-    createNoteTable(scale);
+    createScale(scale);
+    updateScale(scale, player.scaleDegree);
     window.addEventListener('keypress', event => {
         if (!KEY_INTERVALS.hasOwnProperty(event.key) || event.repeat) {
             return;
         }
         pressedKeys[event.key] = player.jump(KEY_INTERVALS[event.key]);
-        updateNoteTable(scale, player.scale_degree);
+        updateScale(scale, player.scaleDegree);
     });
     window.addEventListener('keyup', event => {
         if (pressedKeys.hasOwnProperty(event.key)) {

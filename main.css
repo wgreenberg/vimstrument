@@ -1,12 +1,56 @@
-.interval {
-    text-align: center;
+.ribbon {
+    display: flex;
+    flex-direction: row;
 }
 
-.note {
-    text-align: center;
-    font-weight: normal;
+.degree {
+    background-color: #535151;
+    color: #CAD2C5;
 }
 
-.rootNote {
+.degree.root {
+    background-color: #3a3939;
+}
+
+.degree.zero {
+    background-color: #CAD2C5;
+    color: #2F3E46;
     font-weight: bold;
+}
+
+.degree.one {
+    background-color: #84A98C;
+    color: #2F3E46;
+}
+
+.degree.two {
+    background-color: #52796F;
+    color: #CAD2C5;
+}
+
+.degree.three {
+    background-color: #354F52;
+    color: #CAD2C5;
+}
+
+.degree.four {
+    background-color: #2F3E46;
+    color: #CAD2C5;
+}
+
+.root > .note {
+    text-decoration: underline;
+}
+
+.degree {
+    flex-direction: column;
+    font-family: 'Courier New', Courier, monospace;
+    text-align: center;
+    padding: 5px;
+}
+
+.key {
+}
+
+.interval {
 }
